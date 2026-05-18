@@ -1,3 +1,5 @@
+import { ExcelUploadButton } from "@/components/dashboard/ExcelUploadButton";
+
 export function HeaderBar() {
   return (
     <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
@@ -7,7 +9,10 @@ export function HeaderBar() {
         </h1>
         <span className="text-sm text-muted-foreground">CT-045 컴퓨터 화면</span>
       </div>
-      <div className="text-sm text-muted-foreground">2025-01 ~ 2025-08</div>
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">2025-01 ~ 2025-08</span>
+        <ExcelUploadButton />
+      </div>
     </header>
   );
 }
