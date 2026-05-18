@@ -3,7 +3,7 @@ import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionD
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { ReductionScenarioPlaceholder } from "@/components/dashboard/ReductionScenarioPlaceholder";
+import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
 
 export default function DashboardPage() {
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             <EmissionDetailTablePlaceholder />
           </div>
           <div className="col-span-12 lg:col-span-4">
-            <ReductionScenarioPlaceholder />
+            <ReductionScenarioPanel />
           </div>
         </div>
       </main>
