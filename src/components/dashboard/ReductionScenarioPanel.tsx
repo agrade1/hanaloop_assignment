@@ -54,7 +54,9 @@ export function ReductionScenarioPanel() {
                 <Slider
                   id={`scenario-${stage}`}
                   value={[reductions[stage]]}
-                  onValueChange={(v) => handleChange(stage, v[0])}
+                  onValueChange={(v) =>
+                    handleChange(stage, Array.isArray(v) ? v[0] : v)
+                  }
                   min={0}
                   max={100}
                   step={1}

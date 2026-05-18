@@ -65,10 +65,8 @@ export function ExcelUploadButton() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          엑셀 업로드
-        </Button>
+      <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        엑셀 업로드
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -106,7 +104,7 @@ export function ExcelUploadButton() {
           )}
         </div>
 
-        <DialogFooter className="flex-row gap-2 sm:justify-end">
+        <DialogFooter>
           <Button
             variant="ghost"
             size="sm"
