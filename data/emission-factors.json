@@ -1,0 +1,39 @@
+[
+  {
+    "type": "전기",
+    "description": "한국전력",
+    "factor": 0.456,
+    "factorUnit": "kgCO2e/kWh",
+    "activityUnit": "kWh",
+    "version": 1,
+    "validFrom": "2025-01-01",
+    "note": "한국전력 기본값"
+  },
+  {
+    "type": "원소재",
+    "description": "플라스틱 1",
+    "factor": 2.3,
+    "factorUnit": "kgCO2e/kg",
+    "activityUnit": "kg",
+    "version": 1,
+    "validFrom": "2025-01-01"
+  },
+  {
+    "type": "원소재",
+    "description": "플라스틱 2",
+    "factor": 3.2,
+    "factorUnit": "kgCO2e/kg",
+    "activityUnit": "kg",
+    "version": 1,
+    "validFrom": "2025-01-01"
+  },
+  {
+    "type": "운송",
+    "description": "트럭",
+    "factor": 3.5,
+    "factorUnit": "kgCO2e/ton-km",
+    "activityUnit": "ton-km",
+    "version": 1,
+    "validFrom": "2025-01-01"
+  }
+]
