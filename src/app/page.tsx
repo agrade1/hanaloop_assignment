@@ -4,6 +4,7 @@ import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ReductionScenarioPlaceholder } from "@/components/dashboard/ReductionScenarioPlaceholder";
+import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
 
 export default function DashboardPage() {
   return (
@@ -61,6 +62,10 @@ export default function DashboardPage() {
               description="원소재 / 전기 / 운송 누적"
               height="h-80"
             />
+          </div>
+
+          <div className="col-span-12">
+            <StageDrillDownPlaceholder />
           </div>
 
           <div className="col-span-12 lg:col-span-8">
