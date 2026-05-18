@@ -161,3 +161,56 @@ DECISIONS의 데이터 입력 UI 범위와 회사 도메인(측정·관리·감�
 - 8개 커밋으로 `feat/layout` 브랜치에 점진적으로 구성되어 `develop` 대상 PR로 제출됨
 - `yarn build` 무오류 통과, `yarn dev` 로컬 동작 확인
 - 이슈 #7과 연결 (Closes #7)
+
+---
+
+## 2026-05-19 - 데이터 입력 UI (엑셀 업로드 모달 + 시나리오 슬라이더)
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+DECISIONS의 데이터 입력 UI 범위(엑셀 업로드 + 감축 시나리오 입력)를 UI 수준에서 구현하기 위해 사용했다.
+실제 엑셀 파싱·검증 로직과 시나리오의 차트/KPI 반영은 후속 PR에서 다룬다.
+
+### Prompt
+
+- "데이터 입력 UI를 만들면 좋을거같아 일단 UI만 만들고 추후 PR에서 json으로 PCF, GHG Scope을 계산해서 차트로 그려주는 작업을 하면 될거같아"
+- "1번은 B안으로 시나리오까지 하고 2번은 다음 PR로" — 엑셀 업로드 + 시나리오 슬라이더 둘 다 포함, GHG Scope placeholder는 다음 PR로
+- "커밋할때 네이밍에 feat만 넣고 그뒤에 () 이건 빼고 가자" — 커밋 prefix에서 scope 괄호 제거
+- "아니다 A안으로 가자" — push 전 커밋만 수정, 머지된 develop history는 보존
+
+### AI가 제공한 결과
+
+- shadcn `dialog`, `slider`, `label`, `input` 컴포넌트 추가 (`npx shadcn@latest add ... -y`)
+- `ExcelUploadButton` 컴포넌트 작성:
+  - Dialog 트리거 + 파일 입력 + mock 업로드 흐름 (idle → uploading → success/error)
+  - 파일 미선택 / 확장자 오류 시 구체 에러 메시지 표시 슬롯
+  - `setTimeout` 1.2초로 검증 시뮬레이션 (실제 파싱은 후속 PR)
+- `HeaderBar`에 ExcelUploadButton 통합 (헤더 우측 기간 표시 옆에 배치)
+- `ReductionScenarioPanel` 컴포넌트 작성:
+  - 원소재 / 전기 / 운송 3단계 슬라이더 (0~100%, step 1)
+  - `useState`로 단계별 값 관리, 라벨 우측에 현재 값(%) 표시
+  - Before/After 비교 슬롯 + 절감 효과 표시 영역은 placeholder 유지
+- `ReductionScenarioPlaceholder` → `ReductionScenarioPanel`로 교체 (`page.tsx` import + 기존 파일 삭제)
+- shadcn 최신 버전이 `@base-ui/react` 기반인 점에 따라 API 호환성 보정:
+  - DialogTrigger: `asChild` → `render` prop 패턴
+  - Slider `onValueChange`: `number | readonly number[]` union에 `Array.isArray` 가드 추가
+- 커밋 메시지 컨벤션 변경(scope 괄호 제거)에 따라 push 전 커밋 메시지를 `git filter-branch --msg-filter`로 일괄 수정
+
+### 직접 검토한 부분
+
+- 이번 PR 범위를 B안(엑셀 업로드 + 시나리오 슬라이더 동시)으로 결정
+- GHG Scope 차트 placeholder는 이번 PR이 아닌 후속 PR로 분리
+- "UI만"의 정의: 파일 입력 동작 + mock 검증 메시지 / 슬라이더 값 조정 + 표시. 실제 파싱·차트 반영 없음
+- 커밋 메시지에서 scope 괄호(`feat(dashboard):`)를 제거하고 `feat:` 형태로 통일 — 협업 컨벤션 메모리에도 반영
+- 머지된 develop history는 손대지 않고 push 전 로컬 커밋만 수정 (A안)
+- `ReductionScenarioPlaceholder`는 별개 신규 컴포넌트로 두지 않고 파일 삭제 + 신규 Panel로 교체
+
+### 최종 반영 여부
+
+- 6개 커밋으로 `feat/input-ui` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn build` 통과 (shadcn @base-ui API 호환성 fix 후 정상)
+- 이슈 #9와 연결 (Closes #9)
