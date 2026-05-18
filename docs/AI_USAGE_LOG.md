@@ -119,3 +119,45 @@ DECISIONS의 기술 노선에 따라 Next.js + TypeScript 기반 프로젝트를
 - Next.js + TypeScript + Tailwind + shadcn/ui 스캐폴딩이 `chore/scaffold` 브랜치에 작성되어 `develop` 대상 PR로 제출됨
 - yarn 패키지 매니저로 고정되어 `yarn build`, `yarn dev` 정상 동작
 - 이슈 #5와 연결 (Closes #5)
+
+---
+
+## 2026-05-19 - 대시보드 레이아웃 + 디자인 토대
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+DECISIONS의 데이터 입력 UI 범위와 회사 도메인(측정·관리·감축)을 반영하여, 데이터 연결 전에 대시보드 페이지 Grid 뼈대와 디자인 토대(Pretendard, 녹색 색상 토큰)를 점진적으로 마련하기 위해 사용했다.
+
+### Prompt
+
+- "탄소 관리 플랫폼이니까 흰색 배경에 녹색 느낌, Pretendard 폰트로 대시보드를 그려달라" — 사용자 ASCII 레이아웃 제공
+- "지금 차트 4개만으로 회사 도메인을 만족시키냐?" — 레이아웃 완결성 검토 요청
+- "큰 틀에서부터 하나하나 만들어서 커밋하는 구조로 가자" — 점진적 커밋 분할 요청
+
+### AI가 제공한 결과
+
+- 단일 제품(CT-045) 데이터 제약을 반영해 "제품별 비교" 차트 명칭을 시간/단계 기반(월별 PCF Bar, Top Lifecycle Stage, 월별 단계 적층)으로 변경 제안
+- Pretendard 패키지 설치 후 `layout.tsx`에서 variable font CSS import + `globals.css`의 `--font-sans` 매핑
+- shadcn 디폴트 zinc 토큰 → 녹색(forest) 계열 oklch 토큰으로 교체, `chart-1~5`도 단계 시각화에 맞춰 녹색 그라데이션 + 보조색으로 구성
+- shadcn add card, separator로 카드 슬롯용 컴포넌트 추가
+- 회사 도메인(측정·관리·감축) ↔ 현재 레이아웃 매핑 분석 후 비어 있는 부분 3가지 식별: ① 데이터 입력 UI ② 감축 효과 임팩트 시각화 ③ 단계 Drill-down
+- B안(슬롯 미리 잡기) 선택에 따라 Reduction Scenario에 Before/After + 절감 효과 강조 영역 통합, Stage Drill-down placeholder를 별도 슬롯으로 추가
+- 점진적 8커밋 분할로 layout PR 구성 (디자인 토대 → shadcn → 헤더 뼈대 → 필터 → KPI → 차트 → 테이블·시나리오 → 드릴다운)
+
+### 직접 검토한 부분
+
+- 회사 도메인 키워드와 현재 레이아웃 매핑 점검 후 부족한 부분 식별
+- 옵션 A(묶음 분할 3커밋) vs B(점진 분할 7~8커밋) 비교 후 B 선택
+- Reduction Scenario에 Before/After 통합 vs 별도 슬롯 선택 → 통합 결정
+- Stage Drill-down 위치를 단계 적층 차트 아래 + Detail Table 위로 배치 (단계 → 단계 분해 → 활동 raw 순)
+- KPI 카드 value 임시 값("10"·"20"·"30"·"40") 유지 (placeholder 시각 확인용)
+
+### 최종 반영 여부
+
+- 8개 커밋으로 `feat/layout` 브랜치에 점진적으로 구성되어 `develop` 대상 PR로 제출됨
+- `yarn build` 무오류 통과, `yarn dev` 로컬 동작 확인
+- 이슈 #7과 연결 (Closes #7)
