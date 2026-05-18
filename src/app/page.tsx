@@ -1,7 +1,9 @@
 import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
+import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionDetailTablePlaceholder";
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { ReductionScenarioPlaceholder } from "@/components/dashboard/ReductionScenarioPlaceholder";
 
 export default function DashboardPage() {
   return (
@@ -59,6 +61,13 @@ export default function DashboardPage() {
               description="원소재 / 전기 / 운송 누적"
               height="h-80"
             />
+          </div>
+
+          <div className="col-span-12 lg:col-span-8">
+            <EmissionDetailTablePlaceholder />
+          </div>
+          <div className="col-span-12 lg:col-span-4">
+            <ReductionScenarioPlaceholder />
           </div>
         </div>
       </main>
