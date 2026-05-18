@@ -76,3 +76,46 @@ PCF 대시보드 과제 진행을 위한 의사결정 및 과제 이해 관련 �
 
 - 위 문서 3종이 `docs/decisions` 브랜치에 작성되어 `develop` 대상 PR(#2)로 제출됨
 - 이슈 #1과 연결 (Closes #1)
+
+---
+
+## 2026-05-18 - Next.js + TypeScript 프로젝트 스캐폴딩
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+DECISIONS의 기술 노선에 따라 Next.js + TypeScript 기반 프로젝트를 스캐폴딩하고, Tailwind CSS와 shadcn/ui 프리셋을 도입하여 대시보드 UI 작성 기반을 마련하기 위해 사용했다.
+
+### Prompt
+
+- "이제 Next.js 및 TS 스캐폴딩 진행하자"
+- Tailwind 옵션 비교 (Tailwind / CSS Modules / Tailwind + shadcn/ui) 후 Tailwind + shadcn/ui 선택
+- "yarn dev로 직접 실행해서 확인하고 싶다" — dev 서버 실행 방법 질문
+- yarn 명령이 PowerShell·VS Code 터미널에서 인식되지 않는 문제 해결 요청
+
+### AI가 제공한 결과
+
+- Node.js 22 환경 확인 및 yarn 설치 자동화 (corepack 권한 에러 발생 후 winget으로 우회 설치)
+- `create-next-app`으로 Next.js 16 + TypeScript + App Router + Tailwind CSS v4 + ESLint + `src/` 디렉토리 + import alias `@/*` + yarn 옵션으로 스캐폴딩
+- 폴더명 underscore 제약 회피를 위해 `pcf-dashboard` 임시 폴더에 생성 후 파일을 프로젝트 루트로 이동, 임시 폴더 정리
+- `shadcn@latest init -d -y` 명령으로 shadcn/ui 초기화 (`components.json`, `src/components/ui/button.tsx`, `src/lib/utils.ts` 생성)
+- `package.json`에 `packageManager: yarn@1.22.22` 필드 추가
+- `yarn build`로 2회 무오류 통과 확인
+- yarn PATH 캐시 이슈(winget 설치 직후 `explorer.exe` 캐시 미반영) 진단 및 해결 방법 3가지(세션 내 PATH 갱신 / 탐색기 재시작 / 재로그인) 안내
+
+### 직접 검토한 부분
+
+- Tailwind + shadcn/ui 조합 선택 (대시보드 UI 작성 속도 + 일관된 디자인 시스템 확보)
+- `pcf-dashboard` 임시 폴더에서 프로젝트 루트로 파일 이동 시 기존 `README.md`, `docs/`, `data/` 보존
+- `AGENTS.md`와 `CLAUDE.md`는 Next.js가 자동 생성한 가이드 파일이므로 보존 (우리 프로젝트 컨벤션은 후속 작업에서 추가하기로 결정)
+- yarn 환경 구축 시 corepack 권한 에러 대신 winget을 통한 표준 설치 경로 채택
+- `yarn dev`로 로컬에서 직접 동작 확인 후 다음 단계 진행
+
+### 최종 반영 여부
+
+- Next.js + TypeScript + Tailwind + shadcn/ui 스캐폴딩이 `chore/scaffold` 브랜치에 작성되어 `develop` 대상 PR로 제출됨
+- yarn 패키지 매니저로 고정되어 `yarn build`, `yarn dev` 정상 동작
+- 이슈 #5와 연결 (Closes #5)
