@@ -1,3 +1,4 @@
+import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -15,7 +16,7 @@ export default function DashboardPage() {
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Total PCF"
-              value="—"
+              value="10"
               unit="kgCO₂e"
               hint="전체 합계"
             />
@@ -23,7 +24,7 @@ export default function DashboardPage() {
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Avg PCF"
-              value="—"
+              value="20"
               unit="kgCO₂e"
               hint="월 평균"
             />
@@ -31,12 +32,33 @@ export default function DashboardPage() {
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Top Lifecycle Stage"
-              value="—"
+              value="30"
               hint="가장 큰 배출 단계"
             />
           </div>
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
-            <KpiCard label="Hotspot" value="—" hint="단일 활동 최대값" />
+            <KpiCard label="Hotspot" value="40" hint="단일 활동 최대값" />
+          </div>
+
+          <div className="col-span-12 lg:col-span-8">
+            <ChartPlaceholder
+              title="월별 PCF Bar Chart"
+              description="월별 총 배출량 추이"
+            />
+          </div>
+          <div className="col-span-12 lg:col-span-4">
+            <ChartPlaceholder
+              title="Lifecycle Donut"
+              description="선택 기간 단계별 비중"
+            />
+          </div>
+
+          <div className="col-span-12">
+            <ChartPlaceholder
+              title="월별 단계 적층 Bar Chart"
+              description="원소재 / 전기 / 운송 누적"
+              height="h-80"
+            />
           </div>
         </div>
       </main>
