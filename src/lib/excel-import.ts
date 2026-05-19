@@ -51,16 +51,46 @@ function mapRow(
 }
 
 /**
- * 엑셀 파일을 ActivityRecord[]로 파싱.
- * productId는 엑셀에 없으므로 호출자가 지정.
+ * 파싱 결과 타입.
  *
- * 이번 단계는 매핑만 — 잘못된 값이 들어와도 그대로 통과한다.
- * 검증은 후속 커밋에서 추가.
+ * 성공이면 activities, 실패면 errors 배열로 분기.
+ * 호출자가 한 곳에서 분기 처리하기 쉽도록 discriminated union 사용.
+ */
+export type ParseResult =
+  | { ok: true; activities: ActivityRecord[] }
+  | { ok: false; errors: string[] };
+
+/**
+ * 엑셀 파일을 ActivityRecord[]로 파싱.
+ * productId는 엑셀에 없으므로 호출자가 지정한다.
+ *
+ * 검증 단계:
+ *   1. 빈 시트 거부
+ *   2. 필수 컬럼(헤더) 존재 여부
+ *
+ * 값 단위 검증(숫자·음수·유효 단위 등)은 후속 커밋에서 추가.
  */
 export function parseActivities(
   buffer: ArrayBuffer,
   productId: string,
-): ActivityRecord[] {
+): ParseResult {
   const rows = parseSheetRaw(buffer);
-  return rows.map((row) => mapRow(row, productId));
+
+  if (rows.length === 0) {
+    return { ok: false, errors: ["엑셀 시트가 비어 있습니다."] };
+  }
+
+  // 헤더 검증 — 첫 행을 기준으로 필수 컬럼이 모두 있는지 확인
+  const present = Object.keys(rows[0]);
+  const missing = Object.values(COLUMNS).filter(
+    (col) => !present.includes(col),
+  );
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      errors: [`필수 컬럼이 누락되었습니다: ${missing.join(", ")}`],
+    };
+  }
+
+  return { ok: true, activities: rows.map((row) => mapRow(row, productId)) };
 }
