@@ -14,23 +14,40 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { parseActivities } from "@/lib/excel-import";
+import type { ActivityRecord } from "@/lib/types";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-export function ExcelUploadButton() {
+type Props = {
+  /**
+   * 파싱·검증 성공 시 부모에게 활동 데이터를 전달.
+   * optional — 없으면 모달 안에서 검증만 보여주고 끝.
+   */
+  onUpload?: (activities: ActivityRecord[]) => void;
+  /** 업로드된 데이터에 부여할 productId (엑셀에 없으므로 호출자가 지정) */
+  productId?: string;
+};
+
+export function ExcelUploadButton({
+  onUpload,
+  productId = "CT-045",
+}: Props = {}) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.files?.[0] ?? null;
     setFile(next);
     setStatus("idle");
     setMessage("");
+    setErrors([]);
   }
 
-  function handleUpload() {
+  async function handleUpload() {
     if (!file) {
       setStatus("error");
       setMessage("파일을 선택해주세요.");
@@ -41,19 +58,38 @@ export function ExcelUploadButton() {
       setMessage("xlsx 확장자만 업로드할 수 있습니다.");
       return;
     }
+
     setStatus("uploading");
     setMessage("파일 검증 중...");
-    // mock 처리 — 실제 파싱과 검증은 후속 PR에서 구현
-    setTimeout(() => {
+    setErrors([]);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const result = parseActivities(buffer, productId);
+
+      if (!result.ok) {
+        setStatus("error");
+        setMessage(`검증 실패 — ${result.errors.length}건의 문제 발견`);
+        setErrors(result.errors);
+        return;
+      }
+
       setStatus("success");
-      setMessage(`${file.name} 업로드 완료 (mock — 실제 파싱은 후속 PR)`);
-    }, 1200);
+      setMessage(`${result.activities.length}건의 활동을 임포트했습니다.`);
+      onUpload?.(result.activities);
+    } catch (err) {
+      setStatus("error");
+      setMessage(
+        `파일을 읽는 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   function handleReset() {
     setFile(null);
     setStatus("idle");
     setMessage("");
+    setErrors([]);
   }
 
   const statusClass =
@@ -72,8 +108,8 @@ export function ExcelUploadButton() {
         <DialogHeader>
           <DialogTitle>엑셀 데이터 업로드</DialogTitle>
           <DialogDescription>
-            과제용 활동 데이터(.xlsx)를 업로드해주세요. 잘못된 형식이나 누락된
-            컬럼이 있으면 에러 메시지가 표시됩니다.
+            과제용 활동 데이터(.xlsx)를 업로드해주세요. 잘못된 형식이나 값이 있으면
+            행 번호와 함께 구체적인 에러 메시지가 표시됩니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -100,6 +136,18 @@ export function ExcelUploadButton() {
               className={`rounded-md border px-3 py-2 text-sm ${statusClass}`}
             >
               {message}
+            </div>
+          )}
+
+          {errors.length > 0 && (
+            <div className="max-h-40 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-2">
+              <ul className="flex flex-col gap-1 text-xs text-destructive">
+                {errors.map((err, idx) => (
+                  <li key={idx} className="leading-relaxed">
+                    · {err}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
