@@ -5,8 +5,45 @@ import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
+import {
+  aggregateByMonth,
+  aggregateByStage,
+  averageMonthlyEmission,
+  calculateEmissions,
+  hotspot,
+  topStage,
+  totalEmission,
+} from "@/lib/calc";
+import { staticDataSource } from "@/lib/data-source";
+import { formatNumber, splitEmission } from "@/lib/units";
 
-export default function DashboardPage() {
+/**
+ * 대시보드 페이지 (서버 컴포넌트).
+ *
+ * 정적 데이터 + 순수 계산이므로 서버 컴포넌트에서 한 번에 페치·계산해
+ * 결과를 자식 컴포넌트에 props로 흘려보낸다.
+ */
+export default async function DashboardPage() {
+  // 1. 데이터 페치 (DataSource 인터페이스를 통한 의존)
+  const activities = await staticDataSource.getActivities();
+  const factors = await staticDataSource.getEmissionFactors();
+
+  // 2. 전체 활동을 계산된 배출량으로 변환
+  const calculated = calculateEmissions(activities, factors);
+
+  // 3. KPI 계산
+  const total = totalEmission(calculated);
+  const monthly = aggregateByMonth(calculated);
+  const avg = averageMonthlyEmission(monthly);
+  const stages = aggregateByStage(calculated);
+  const top = topStage(stages);
+  const peak = hotspot(calculated);
+
+  // 4. 표시용 포맷 (값/단위 분리)
+  const totalDisplay = splitEmission(total);
+  const avgDisplay = splitEmission(avg);
+  const peakDisplay = peak ? splitEmission(peak.emission) : null;
+
   return (
     <div className="flex min-h-screen flex-col">
       <HeaderBar />
@@ -19,28 +56,38 @@ export default function DashboardPage() {
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Total PCF"
-              value="10"
-              unit="kgCO₂e"
-              hint="전체 합계"
+              value={totalDisplay.value}
+              unit={totalDisplay.unit}
+              hint="전체 기간 합계"
             />
           </div>
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Avg PCF"
-              value="20"
-              unit="kgCO₂e"
+              value={avgDisplay.value}
+              unit={avgDisplay.unit}
               hint="월 평균"
             />
           </div>
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
             <KpiCard
               label="Top Lifecycle Stage"
-              value="30"
-              hint="가장 큰 배출 단계"
+              value={top?.stage ?? "—"}
+              hint={
+                top ? `전체의 ${formatNumber(top.share * 100, 1)}% 차지` : "데이터 없음"
+              }
             />
           </div>
           <div className="col-span-12 sm:col-span-6 lg:col-span-3">
-            <KpiCard label="Hotspot" value="40" hint="단일 활동 최대값" />
+            <KpiCard
+              label="Hotspot"
+              value={peak?.description ?? "—"}
+              hint={
+                peak && peakDisplay
+                  ? `${peakDisplay.value} ${peakDisplay.unit} · ${peak.date}`
+                  : "데이터 없음"
+              }
+            />
           </div>
 
           <div className="col-span-12 lg:col-span-8">

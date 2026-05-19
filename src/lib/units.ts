@@ -90,6 +90,30 @@ export function toDisplayFactorUnit(rawUnit: string): string {
 }
 
 /**
+ * 값에 따라 `kgCO₂e ↔ tCO₂e`를 자동 선택하면서,
+ * 숫자 문자열과 단위를 **분리해** 반환한다.
+ *
+ * `formatEmission`은 한 문자열로 합쳐 주지만,
+ * `KpiCard`처럼 값과 단위를 별도 시각 요소로 표시하는 곳에서는 분리된 형태가 필요.
+ *
+ * @example
+ * splitEmission(773.732)    // { value: "773.7", unit: "kgCO₂e" }
+ * splitEmission(1508.8)     // { value: "1.5",   unit: "tCO₂e" }
+ */
+export function splitEmission(
+  value: number,
+  fractionDigits: number = 1,
+): { value: string; unit: string } {
+  if (Math.abs(value) >= T_THRESHOLD) {
+    return {
+      value: formatNumber(value / 1000, fractionDigits),
+      unit: "tCO₂e",
+    };
+  }
+  return { value: formatNumber(value, fractionDigits), unit: "kgCO₂e" };
+}
+
+/**
  * 절감 효과를 "절감량 + 절감 비율" 형태로 표시.
  *
  * @example
