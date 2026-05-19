@@ -25,6 +25,14 @@ yarn start
 
 ---
 
+## 데모 영상 · 스크린샷
+
+실행 과정 영상과 화면 스크린샷은 다음 폴더에서 확인하실 수 있습니다.
+
+[📁 Google Drive — 데모 영상 · 스크린샷](https://drive.google.com/drive/folders/1MVL9lZmL2STCRFiL-dvr77atDqle8CRn?usp=sharing)
+
+---
+
 ## 주요 기능
 
 | 영역 | 기능 |
