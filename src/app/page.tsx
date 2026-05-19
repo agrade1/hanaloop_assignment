@@ -3,6 +3,7 @@ import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionD
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { LifecycleDonutChart } from "@/components/dashboard/LifecycleDonutChart";
 import { MonthlyPcfBarChart } from "@/components/dashboard/MonthlyPcfBarChart";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
@@ -95,10 +96,7 @@ export default async function DashboardPage() {
             <MonthlyPcfBarChart monthly={monthly} />
           </div>
           <div className="col-span-12 lg:col-span-4">
-            <ChartPlaceholder
-              title="Lifecycle Donut"
-              description="선택 기간 단계별 비중"
-            />
+            <LifecycleDonutChart stages={stages} />
           </div>
 
           <div className="col-span-12">
