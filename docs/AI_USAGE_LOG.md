@@ -533,3 +533,61 @@ mock이 아니라 실제로 충족시키기 위해, 엑셀 파싱 + 검증 + 대
 - `yarn test` 37개 통과 (calc 29 + excel-import 8)
 - `yarn build` 무오류
 - 이슈 #21과 연결 (Closes #21)
+
+---
+
+## 2026-05-19 - 단계·기간 필터 + 시나리오 슬라이더 디바운스
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+평가 가이드의 "제품·단계별 필터링" 요구사항을 실제 동작하는 형태로 채우고,
+시나리오 슬라이더 드래그 중 차트가 매번 다시 그려지는 시각적 부담을 디바운스로 완화한다.
+실무자가 데이터를 좁혀서 분석할 수 있는 인터랙티브 컨트롤이 한 묶음으로 들어가는 단계.
+
+### Prompt
+
+- "FiltersBar가 placeholder인데 단계·기간 필터를 실제 동작하게 채우자.
+  단일 제품 상황이라 제품 필터는 빼고, DECISIONS 결정대로 단계 멀티 토글 + 기간 시작/끝 Select로 가자."
+- "시나리오 슬라이더 변경할 때마다 차트가 즉시 다시 그려져 보기 안 좋다.
+  디바운스 적용해 슬라이더는 즉시 반응하되 차트 갱신은 일정 시간 후로 미루자.
+  pending/실제 reductions 두 state로 분리해 슬라이더 반응성은 유지." (디바운스 간격은 1.5초 → 사용 중 0.5초로 직접 조정)
+- "데이터 흐름은 activities → 단계 필터 → 기간 필터 → applyScenario(reductions) → 모든 시각화 순서로 단방향 유지."
+- "다음 PR로 React 19 Compiler 도입 + 성능 측정 비교를 따로 가자.
+  지금 PR은 필터·디바운스만으로 깔끔히 마무리."
+
+### AI 활용 영역
+
+- 지시한 설계대로 FiltersBar controlled 컴포넌트 작성 (단계 토글 + 기간 Select)
+- shadcn add select로 Select 컴포넌트 도입
+- DashboardClient에 네 가지 state(activities / selectedStages / period / reductions+pending) 통합 +
+  단방향 흐름 코드 자동화
+- useMemo로 filteredActivities, beforeCalculated, calculated 캐싱 적용
+- 활동 데이터 변경 시 기간 필터를 양 끝 월로 자동 초기화하는 useEffect
+- 디바운스 useEffect (setTimeout + cleanup)
+
+### 직접 결정·검토한 부분
+
+- **필터 범위 결정** — DECISIONS와 일관되게 제품 필터 제외, 단계·기간만. 단계는 멀티 토글(기본 모두 ON), 기간은 데이터에서 동적으로 추출한 월 목록의 시작/끝 Select
+- **데이터 흐름 단방향 설계** — activities → 필터 → 시나리오 → 시각화 순서 명시. 필터가 시나리오 앞에 적용되어 "필터된 부분집합에 시나리오 적용"이 자연스러움
+- **디바운스 두 state 분리** — pendingReductions(즉시) / reductions(디바운스) 분리해 슬라이더 반응성과 차트 안정성 둘 다 확보. ReductionScenarioPanel에는 pending 전달 → 드래그 즉시 반응
+- **디바운스 간격 조정** — 처음 1.5초로 시작했으나 실제 드래그 UX 확인 후 0.5초로 단축. 너무 길면 사용자가 기다리는 인상, 너무 짧으면 차트가 출렁임. 0.5초가 균형점
+- **기간 자동 초기화** — 엑셀 업로드로 activities가 바뀔 때 기간 필터가 옛 월 범위에 머무르면 빈 결과가 나오므로 새 데이터의 양 끝으로 자동 리셋
+- **PR 분리** — React 19 Compiler 도입과 성능 측정은 의도가 다른 작업이라 별도 PR로 분리해 의미 단위 유지
+
+### 회고
+
+- 두 가지 인터랙션(필터·디바운스)을 한 PR에 묶었지만 데이터 흐름이 같은 영역(필터 적용된 activities에 시나리오)이라 자연스러웠음.
+- 디바운스 간격을 코드 검토 단계에서 직접 조정해 본 부분이 발표 포인트:
+  "기본 1.5초로 짰지만 드래그 인터랙션 확인 후 0.5초로 단축, UX와 성능의 균형점을 찾았다."
+- 다음 PR에서 React 19 Compiler 도입 시 일부 useMemo를 제거 가능. 성능 측정을 동반해 어필 강화.
+
+### 최종 반영 여부
+
+- 2개 커밋(shadcn select 추가 + FiltersBar/DashboardClient 필터·디바운스 통합)으로
+  `feat/filters-and-debounce` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 37개 통과, `yarn build` 무오류
+- 이슈 #23과 연결 (Closes #23)

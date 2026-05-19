@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { EmissionDetailTable } from "@/components/dashboard/EmissionDetailTable";
-import { FiltersBar } from "@/components/dashboard/FiltersBar";
+import { FiltersBar, type Period } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LifecycleDonutChart } from "@/components/dashboard/LifecycleDonutChart";
@@ -28,6 +28,9 @@ import type {
 } from "@/lib/types";
 import { formatNumber, splitEmission } from "@/lib/units";
 
+const ALL_STAGES: LifecycleStage[] = ["원소재", "전기", "운송"];
+const SCENARIO_DEBOUNCE_MS = 500;
+
 type Props = {
   /**
    * 서버에서 페치한 초기 활동 데이터.
@@ -41,45 +44,113 @@ type Props = {
 /**
  * 대시보드 클라이언트 컨테이너.
  *
- * 활동 데이터(`activities`)와 시나리오(`reductions`) 두 state를 보유.
- * 둘 다 변할 때마다 `applyScenario`로 재계산해 모든 자식 컴포넌트에 흘려보낸다.
+ * 네 가지 state를 한 곳에서 관리하고 단방향 흐름으로 자식들에게 흘려보낸다:
+ *   1. `activities` — 엑셀 업로드로 교체되는 원본 데이터
+ *   2. `selectedStages` — 단계 필터 (멀티 토글)
+ *   3. `period` — 기간 필터 (시작/끝 월 범위)
+ *   4. `reductions` (+ `pendingReductions`) — 시나리오 감축률.
+ *      슬라이더 표시값은 `pending`(즉시 반응), 차트 재계산은 `reductions`(1.5초 디바운스)로 분리해
+ *      드래그 중 차트가 매번 다시 그려지는 시각적 부담을 줄임.
  *
  * 데이터 흐름:
- *   엑셀 업로드 → setActivities → applyScenario → 모든 KPI/차트/테이블
- *   슬라이더 변경 → setReductions → applyScenario → 모든 KPI/차트/테이블
- *
- * `activities`가 비어 있으면 empty state를 보여줘 사용자가 다음 행동(엑셀 업로드)을 알 수 있게 한다.
+ *   activities → [단계 필터] → [기간 필터] → [applyScenario(reductions)] → 모든 KPI/차트/테이블
  */
 export function DashboardClient({ initialActivities, factors }: Props) {
-  // 활동 데이터 state — 엑셀 업로드로 교체
+  // 1. 활동 데이터 state
   const [activities, setActivities] =
     useState<ActivityRecord[]>(initialActivities);
 
-  // 시나리오 상태 — 기본은 감축 없음(0%)
+  // 2. 단계 필터 — 기본은 모두 선택
+  const [selectedStages, setSelectedStages] = useState<Set<LifecycleStage>>(
+    () => new Set(ALL_STAGES),
+  );
+
+  // 3. 기간 필터 — 데이터 페치 후 availableMonths 양 끝으로 자동 세팅
+  const [period, setPeriod] = useState<Period>({ start: "", end: "" });
+
+  // 4a. 시나리오 — 슬라이더 즉시 표시용 (pending)
+  const [pendingReductions, setPendingReductions] = useState<ScenarioReductions>(
+    { 원소재: 0, 전기: 0, 운송: 0 },
+  );
+
+  // 4b. 시나리오 — 실제 계산에 사용 (1.5초 디바운스)
   const [reductions, setReductions] = useState<ScenarioReductions>({
     원소재: 0,
     전기: 0,
     운송: 0,
   });
 
-  /** 슬라이더 변경 핸들러 — 단일 단계만 갱신, 나머지는 그대로 유지 */
+  /** 디바운스: pendingReductions가 1.5초 안정되면 실제 reductions로 반영 */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setReductions(pendingReductions);
+    }, SCENARIO_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [pendingReductions]);
+
+  /** 슬라이더 변경 핸들러 — pending state만 즉시 업데이트, 실제 차트 갱신은 디바운스 후 */
   const handleReductionChange = (stage: LifecycleStage, value: number) => {
-    setReductions((prev) => ({ ...prev, [stage]: value }));
+    setPendingReductions((prev) => ({ ...prev, [stage]: value }));
   };
 
-  /** 엑셀 업로드 성공 핸들러 — 업로드된 활동 데이터로 통째 교체 */
+  /** 단계 필터 토글 */
+  const handleToggleStage = (stage: LifecycleStage) => {
+    setSelectedStages((prev) => {
+      const next = new Set(prev);
+      if (next.has(stage)) next.delete(stage);
+      else next.add(stage);
+      return next;
+    });
+  };
+
+  /** 엑셀 업로드 성공 — 활동 데이터 통째 교체 */
   const handleUploadActivities = (uploaded: ActivityRecord[]) => {
     setActivities(uploaded);
   };
 
+  // 활동 데이터에서 사용 가능한 월 목록 도출 (오름차순)
+  const availableMonths = useMemo(() => {
+    const months = new Set(activities.map((a) => a.date.slice(0, 7)));
+    return Array.from(months).sort();
+  }, [activities]);
+
+  // 활동 데이터가 바뀌면 기간 필터를 양 끝으로 자동 초기화
+  useEffect(() => {
+    if (availableMonths.length === 0) {
+      setPeriod({ start: "", end: "" });
+      return;
+    }
+    setPeriod({
+      start: availableMonths[0],
+      end: availableMonths[availableMonths.length - 1],
+    });
+  }, [availableMonths]);
+
   const hasData = activities.length > 0;
 
-  // Before: 원본 그대로 계산 (시나리오 무관)
-  const beforeCalculated = calculateEmissions(activities, factors);
+  /** 단계 + 기간 필터 적용된 활동 데이터 */
+  const filteredActivities = useMemo(() => {
+    return activities.filter((a) => {
+      if (!selectedStages.has(a.type)) return false;
+      const month = a.date.slice(0, 7);
+      if (period.start && month < period.start) return false;
+      if (period.end && month > period.end) return false;
+      return true;
+    });
+  }, [activities, selectedStages, period]);
+
+  // Before: 필터 적용 + 시나리오 미적용
+  const beforeCalculated = useMemo(
+    () => calculateEmissions(filteredActivities, factors),
+    [filteredActivities, factors],
+  );
   const beforeTotal = totalEmission(beforeCalculated);
 
-  // After: 시나리오 적용 후 재계산. 모든 시각화는 After 기준으로 표시.
-  const calculated = applyScenario(activities, factors, reductions);
+  // After: 필터 적용 + 시나리오 적용 (디바운스된 reductions)
+  const calculated = useMemo(
+    () => applyScenario(filteredActivities, factors, reductions),
+    [filteredActivities, factors, reductions],
+  );
 
   const total = totalEmission(calculated);
   const monthly = aggregateByMonth(calculated);
@@ -101,7 +172,13 @@ export function DashboardClient({ initialActivities, factors }: Props) {
         ) : (
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12">
-              <FiltersBar />
+              <FiltersBar
+                selectedStages={selectedStages}
+                onToggleStage={handleToggleStage}
+                availableMonths={availableMonths}
+                period={period}
+                onPeriodChange={setPeriod}
+              />
             </div>
 
             <div className="col-span-12 sm:col-span-6 lg:col-span-3">
@@ -158,8 +235,12 @@ export function DashboardClient({ initialActivities, factors }: Props) {
               <EmissionDetailTable rows={calculated} />
             </div>
             <div className="col-span-12 lg:col-span-4">
+              {/*
+                슬라이더 표시값은 pending(즉시 반응), 부모의 재계산은 debounced reductions.
+                Before/After 카드의 afterTotal도 debounced 기준이라 차트와 일관되게 1.5초 뒤 갱신된다.
+              */}
               <ReductionScenarioPanel
-                reductions={reductions}
+                reductions={pendingReductions}
                 onChange={handleReductionChange}
                 beforeTotal={beforeTotal}
                 afterTotal={total}
