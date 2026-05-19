@@ -272,3 +272,49 @@ AI는 **튜터·검수자(reviewer)** 역할로 두고, 구현 자동화는 위�
   `feat/core` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
 - `yarn test` 29개 모두 통과, `yarn build` 무오류
 - 이슈 #11과 연결 (Closes #11)
+
+---
+
+## 2026-05-19 - 차트·데이터 연결 1단계 (서버 컴포넌트 전환 + KPI 카드)
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+PR-A에서 마련한 lib 계층(타입·DataSource·계산 모듈)을 실제 화면에 처음 연결하는 단계.
+shadcn 차트 컴포넌트를 도입하고, `page.tsx`를 서버 컴포넌트로 전환해
+정적 데이터 페치 + 계산 결과를 KPI 카드에 주입한다.
+
+### Prompt
+
+- "PR-B로 가자. 이슈 제목에 PR-B 안 붙여도 되고 브랜치명은 좀 더 길게 써도 됨"
+- "수정한 코드 라인이 500개 넘어가면 PR 자르자, 한 7~800줄에서 끊자" — PR 크기 룰 제시
+
+### AI 활용 영역
+
+- shadcn chart/table 컴포넌트 설치 진행 (Recharts 기반 자동 생성 코드 ~500줄)
+- `page.tsx` async 서버 컴포넌트 패턴 적용 — `staticDataSource` + `calc` 모듈 호출 후 props 주입
+- `units.ts`에 `splitEmission` 헬퍼 추가 (값/단위 분리 — KpiCard에 별도 시각 요소로 표시하기 위함)
+- KPI 카드 4개(Total / Avg / Top Stage / Hotspot)에 계산 결과 매핑 작성
+
+### 직접 결정·검토한 부분
+
+- **렌더링 전략**: 클라이언트 컴포넌트 대신 서버 컴포넌트에서 데이터 페치 (정적 JSON이라 SSG 친화적, 클라이언트 JS 사이즈도 줄임)
+- **KpiCard 표시 방식**: value/unit 분리를 유지하면서 자동 단위 변환을 지원하기 위해 `splitEmission` 헬퍼 신설 (`formatEmission`은 한 문자열 합본이라 KpiCard와 안 맞음)
+- **PR 분할 룰 확정**: 누적 변경 라인 500~800줄 사이에서 PR 끊기로 협업 컨벤션에 정착. 자동 생성 코드도 카운트에 포함
+- **차트 컴포넌트 1개(MonthlyPcfBarChart) 미리 작성했지만 누적 807줄 도달 → 다음 PR로 이월**
+
+### 회고
+
+- PR 크기 룰을 작업 중에 도입한 결과, 이미 작성한 차트 컴포넌트를 다음 PR로 미루는 의사결정이 한 번 발생.
+- 다음부터는 PR 분기 시점에 라인 예산을 먼저 추정하고 컴포넌트 단위를 정하는 흐름으로 개선 예정.
+
+### 최종 반영 여부
+
+- 2개 커밋(shadcn chart/table 추가 + page.tsx 서버 컴포넌트 전환·KPI 주입)으로
+  `feat/connect-charts-to-data` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 29개 통과, `yarn build` 무오류
+- 차트 컴포넌트 작성·연결은 후속 PR (PR-B-2)에서 이어감
+- 이슈 #13과 연결 (Closes #13)
