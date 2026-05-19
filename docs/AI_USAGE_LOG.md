@@ -318,3 +318,48 @@ shadcn 차트 컴포넌트를 도입하고, `page.tsx`를 서버 컴포넌트로
 - `yarn test` 29개 통과, `yarn build` 무오류
 - 차트 컴포넌트 작성·연결은 후속 PR (PR-B-2)에서 이어감
 - 이슈 #13과 연결 (Closes #13)
+
+---
+
+## 2026-05-19 - 메인 차트 3종 연결 (월별 PCF Bar / Lifecycle Donut / 월별 단계 적층)
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+PR #14에서 마련한 서버 컴포넌트·KPI 구조 위에, 대시보드의 메인 차트 3종을 실제 데이터로 그린다.
+shadcn Chart(Recharts) 컴포넌트 패턴을 일관되게 적용하고, 단계 색상 토큰을 차트 간 통일.
+
+### Prompt
+
+- "다음 진행" — PR-B-2 진행 요청
+
+### AI 활용 영역
+
+- shadcn Chart의 `ChartContainer` / `ChartTooltip` / `ChartLegend` API 사용 패턴 적용
+- 월별 막대(BarChart), 단계 도넛(PieChart with innerRadius), 적층 막대(Bar with stackId)의 Recharts 매핑
+- `aggregateByMonth.byStage`를 적층 차트가 받는 평탄화 데이터로 변환
+- chartConfig + STAGE_COLORS 분리 설계 (한글 key가 CSS 변수에 안전하지 않은 점 회피)
+
+### 직접 결정·검토한 부분
+
+- **단계 색상의 차트 간 통일**: Donut과 Stacked Bar가 동일한 `STAGE_COLORS` record를 공유해 시각 일관성 확보
+- **chartConfig key를 한글로 두면서도 색상은 별도 record로** — `var(--color-{한글})` CSS 변수가 브라우저에서 항상 안전하지 않은 문제 회피
+- **적층 순서** 원소재 → 전기 → 운송으로 결정 (배출 기여도 통상 순서에 맞춤, 단계 색 톤도 짙은→옅은 순으로 자연스럽게)
+- **둥근 모서리는 적층 최상단 Bar에만 적용** — 시각적으로 막대 전체가 한 덩어리로 보이게
+- **0 값 단계 필터링**: Donut에서 total이 0인 단계는 빈 조각을 만들지 않도록 사전 제거
+- 더 이상 쓰이지 않는 `ChartPlaceholder` import 정리 (lint Hint 대응)
+
+### 회고
+
+- PR 크기 룰 도입 후 첫 PR. 컴포넌트 단위 + 라인 예산을 미리 가늠하니 작업 흐름이 매끄러웠음.
+- 차트 3종 + page.tsx 연결 = 누적 273줄. 룰(500~800) 한참 안쪽이라 여유.
+
+### 최종 반영 여부
+
+- 3개 커밋(MonthlyPcfBarChart / LifecycleDonutChart / MonthlyStageStackedBarChart 연결)으로
+  `feat/main-charts` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 29개 통과, `yarn build` 무오류
+- 이슈 #15와 연결 (Closes #15)
