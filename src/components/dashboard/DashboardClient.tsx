@@ -128,14 +128,15 @@ export function DashboardClient({ initialActivities, factors }: Props) {
   };
 
   // ── Profiler 측정 인프라 (dev 모드 전용) ────────────────────────────────
-  // React 19 Compiler 도입 전/후의 렌더 비용을 동일 시나리오로 비교하기 위한 상태.
-  // startedAtRef / isMeasuringRef를 통해 Profiler 콜백이 매 렌더마다 새로 만들어지지 않게
-  // useCallback + ref 패턴으로 안정화한다.
+  // 콜백 안에서 setState를 직접 호출하면 commit → onRender → setState → commit 무한 루프가
+  // 발생하므로, 측정 중에는 commit을 ref에 누적만 하고 중지 시점에 한 번에 state로 flush한다.
+  // 카드 표시 갱신은 측정 종료/리셋 시점에만 일어나 렌더 비용 측정 자체에 영향이 없다.
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [profilerCommits, setProfilerCommits] = useState<ProfilerCommit[]>([]);
   const [elapsedMs, setElapsedMs] = useState(0);
   const startedAtRef = useRef<number | null>(null);
   const isMeasuringRef = useRef(false);
+  const commitsRef = useRef<ProfilerCommit[]>([]);
 
   useEffect(() => {
     isMeasuringRef.current = isMeasuring;
@@ -145,15 +146,14 @@ export function DashboardClient({ initialActivities, factors }: Props) {
     (_id, _phase, actualDuration) => {
       if (!isMeasuringRef.current || startedAtRef.current === null) return;
       const at = performance.now() - startedAtRef.current;
-      setProfilerCommits((prev) => [
-        ...prev,
-        { duration: actualDuration, at },
-      ]);
+      // setState 대신 ref에만 누적 — 리렌더 트리거 안 함으로써 무한 루프 회피
+      commitsRef.current.push({ duration: actualDuration, at });
     },
     [],
   );
 
   const startMeasuring = () => {
+    commitsRef.current = [];
     setProfilerCommits([]);
     setElapsedMs(0);
     startedAtRef.current = performance.now();
@@ -164,10 +164,13 @@ export function DashboardClient({ initialActivities, factors }: Props) {
     if (startedAtRef.current !== null) {
       setElapsedMs(performance.now() - startedAtRef.current);
     }
+    // 측정 종료 시점에 한 번에 flush — 이 setState는 측정 후라 무한 루프 위험 없음
+    setProfilerCommits([...commitsRef.current]);
     setIsMeasuring(false);
   };
 
   const resetMeasurement = () => {
+    commitsRef.current = [];
     setProfilerCommits([]);
     setElapsedMs(0);
     startedAtRef.current = null;

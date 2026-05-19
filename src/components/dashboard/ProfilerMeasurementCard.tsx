@@ -62,7 +62,10 @@ export function ProfilerMeasurementCard({
       <span className="font-medium text-foreground">
         {isMeasuring ? "측정 중" : hasResult ? "측정 완료" : "Profiler"}
       </span>
-      {(isMeasuring || hasResult) && (
+      {isMeasuring && (
+        <span className="text-muted-foreground">시나리오를 수행한 뒤 중단을 눌러주세요</span>
+      )}
+      {!isMeasuring && hasResult && (
         <span className="tabular-nums text-muted-foreground">
           {elapsedSec}s · {count} commits · avg {avg.toFixed(2)}ms · max{" "}
           {max.toFixed(2)}ms
