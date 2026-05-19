@@ -74,23 +74,25 @@ export function EmissionDetailTable({ rows }: Props) {
             <TableBody>
               {sorted.map((row, idx) => (
                 <TableRow key={`${row.date}-${row.type}-${row.description}-${idx}`}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="text-center font-mono text-xs text-muted-foreground">
                     {row.date}
                   </TableCell>
-                  <TableCell className="font-medium">{row.type}</TableCell>
-                  <TableCell className="truncate text-muted-foreground">
+                  <TableCell className="text-center font-medium">
+                    {row.type}
+                  </TableCell>
+                  <TableCell className="truncate text-center text-muted-foreground">
                     {row.description}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-center tabular-nums">
                     {formatNumber(row.amount, 0)}{" "}
                     <span className="text-xs text-muted-foreground">
                       {formatActivityUnit(row.activityUnit)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                  <TableCell className="text-center tabular-nums text-muted-foreground">
                     × {row.factor}
                   </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
+                  <TableCell className="text-center font-medium tabular-nums">
                     {formatNumber(row.emission, 2)}{" "}
                     <span className="text-xs text-muted-foreground">
                       kgCO₂e
