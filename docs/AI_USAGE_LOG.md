@@ -363,3 +363,47 @@ shadcn Chart(Recharts) 컴포넌트 패턴을 일관되게 적용하고, 단계 
   `feat/main-charts` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
 - `yarn test` 29개 통과, `yarn build` 무오류
 - 이슈 #15와 연결 (Closes #15)
+
+---
+
+## 2026-05-19 - Emission Detail Table 연결
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+실무자 뷰의 핵심인 활동 raw 데이터를 표 형태로 시각화해, 평가 가이드의
+"활동량 / 단위 / 배출계수 / 계산된 배출량 표시" 요구사항을 충족한다.
+
+### Prompt
+
+- "Emission Detail Table / Stage Drill-down / Reduction Scenario Before — 이 차트들 구현 필수인지" — 평가 기준 대조 요청
+- "PR-B-3 이걸로 가자" — Detail Table 단독 진행 결정
+
+### AI 활용 영역
+
+- 평가 가이드와 작업 후보를 대조해 필수/권장/선택 분류 안내
+- shadcn Table 컴포넌트 패턴 적용 (sticky header, max-h + overflow-auto)
+- 단계 정렬 가중치 record 설계 (원소재→전기→운송)
+- `formatActivityUnit`, `formatNumber` 유틸 재사용으로 단위 표시 일관성 유지
+
+### 직접 결정·검토한 부분
+
+- **PR 분할 재구성**: 기존 "Detail Table + Drill-down 정적 + Scenario Before" 묶음이 의미 단위가 약하다는 점 인지 후 분리. Scenario는 PR-C에서 Before+After를 한 번에 다루는 게 자연스러움
+- **정렬 규칙**: 일자 → 단계(도메인 흐름 순) → 세부. 단순 일자만 사용하면 같은 일자 안에서 순서가 비결정적이 되는 점 회피
+- **중복 레코드 처리**: 5월처럼 같은 키에 두 건 들어와도 그대로 표시 (raw 보존). 합산은 차트가 담당
+- **시각 강조**: 배출량 컬럼만 `font-medium`, 배출계수는 `× n` 형태로 표시해 "어떻게 계산됐는지" 한눈에 보이게
+- **Stage Drill-down은 권장 항목이라 시간 여유 없으면 제외 가능**하다고 판단, 후속 PR로 미룸
+
+### 회고
+
+- 평가 기준 대조 단계에서 작업 우선순위가 명확해짐. 모든 placeholder를 채우려 하지 말고 필수/권장/선택을 먼저 가르는 흐름이 시간 절약에 효과적이라는 점 재확인.
+
+### 최종 반영 여부
+
+- 단일 커밋(`EmissionDetailTable` 추가 + placeholder 삭제 + page.tsx 교체)으로
+  `feat/emission-detail-table` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 29개 통과, `yarn build` 무오류
+- 이슈 #17과 연결 (Closes #17)
