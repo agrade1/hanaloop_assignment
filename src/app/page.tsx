@@ -1,8 +1,10 @@
-import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionDetailTablePlaceholder";
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { LifecycleDonutChart } from "@/components/dashboard/LifecycleDonutChart";
+import { MonthlyPcfBarChart } from "@/components/dashboard/MonthlyPcfBarChart";
+import { MonthlyStageStackedBarChart } from "@/components/dashboard/MonthlyStageStackedBarChart";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
 import {
@@ -91,24 +93,14 @@ export default async function DashboardPage() {
           </div>
 
           <div className="col-span-12 lg:col-span-8">
-            <ChartPlaceholder
-              title="월별 PCF Bar Chart"
-              description="월별 총 배출량 추이"
-            />
+            <MonthlyPcfBarChart monthly={monthly} />
           </div>
           <div className="col-span-12 lg:col-span-4">
-            <ChartPlaceholder
-              title="Lifecycle Donut"
-              description="선택 기간 단계별 비중"
-            />
+            <LifecycleDonutChart stages={stages} />
           </div>
 
           <div className="col-span-12">
-            <ChartPlaceholder
-              title="월별 단계 적층 Bar Chart"
-              description="원소재 / 전기 / 운송 누적"
-              height="h-80"
-            />
+            <MonthlyStageStackedBarChart monthly={monthly} />
           </div>
 
           <div className="col-span-12">
