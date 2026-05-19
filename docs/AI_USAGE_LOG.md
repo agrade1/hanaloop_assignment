@@ -591,3 +591,90 @@ Claude Code (Claude Opus 4.7) — VSCode 확장 환경
   `feat/filters-and-debounce` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
 - `yarn test` 37개 통과, `yarn build` 무오류
 - 이슈 #23과 연결 (Closes #23)
+
+---
+
+## 2026-05-19 - React 19 Compiler 도입 + Profiler API 정량 측정
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+React 19 신기능인 React Compiler를 도입해 컴포넌트 메모이제이션을 자동화하고,
+도입 전/후 동일 시나리오의 렌더 비용을 React Profiler API로 정량 측정해
+발표·면접에서 "신기능 도입 + 성능 개선 입증" 으로 활용한다.
+
+### Prompt
+
+- "다음 PR로 React 19 Compiler 도입하자. 비교는 단순하게 — next.config의 reactCompiler를 토글만 해서
+  Before/After 측정하는 시나리오로. useMemo는 그대로 두고 Compiler 추가 효과만 측정."
+- "Profiler 콜백을 콘솔로 찍으면 슬라이더 드래그 시 콘솔이 폭주해 비교 불가능.
+  측정 카드 UI를 헤더에 직접 박아서 commit 수·평균/최대 actualDuration을 스크린샷 한 장으로 비교 가능하게 가자."
+- "측정 카드는 dev 모드 전용 (production 빌드에서는 미렌더). 콜백은 useRef + useCallback으로
+  매 렌더마다 새 함수 만들어지지 않게 안정화."
+- "측정 시작 후 모달이 안 열리고 페이지가 크래시한다 / 엑셀 업로드 후 측정 시작하면 Maximum update depth 에러" —
+  Profiler 콜백 안 setState 무한 루프 진단 후 ref 패턴으로 즉시 수정 요청
+
+### AI 활용 영역
+
+- babel-plugin-react-compiler 설치 + next.config.ts의 top-level `reactCompiler: true` 적용
+  (Next.js 16에서 옵션이 experimental에서 top-level로 승격된 부분은 `node_modules/next/dist/docs/`를 참조해 반영)
+- ProfilerMeasurementCard 컴포넌트 (측정 시작/중단/리셋 + commit 통계 표시)
+- HeaderBar에 rightSlot prop 추가, dev 모드 전용 분기
+- DashboardClient에 측정 state + useRef 기반 안정 콜백 패턴 적용
+- 무한 루프 fix: setState 누적 → ref 누적 후 stop 시 한 번에 flush 패턴으로 전환
+
+### 직접 결정·검토한 부분
+
+- **PR 분리** — 필터·디바운스 PR과 분리해 의도 단위 명확화
+- **비교 시나리오 단순화** — useMemo 다 제거하는 부담스러운 방식 대신,
+  `reactCompiler: true ↔ false` 토글만으로 Before/After 측정 시나리오 채택
+- **콘솔 로그 → 화면 측정 카드** — 콘솔로 매 commit마다 찍으면 정량 비교 불가능. UI 카드로 직접 노출
+- **측정 카드 위치 — 헤더 우측** — 시나리오 수행 중에도 항상 보이고 스크린샷 캡처가 깔끔
+- **이중 측정으로 재현성 확보** — 한 번이 아니라 두 번 측정해 결과 일관성 확인
+- **무한 루프 진단 + ref 패턴 도입** — 첫 구현에서 setState로 commits 누적 → 무한 루프 발생.
+  ref에 누적하고 측정 종료 시점에 flush하는 패턴으로 전환 (측정 자체가 측정 결과에 영향 주지 않게)
+- **DevTools Profiler 녹화는 보조** — 코드 안 측정 카드를 1차 정량 자료로,
+  DevTools 스크린샷은 PR 본문에 보조 첨부
+
+### 측정 결과 (동일 시나리오, 두 번 측정 재현)
+
+#### 측정 1
+| 지표 | Compiler OFF | Compiler ON | 변화 |
+|---|---|---|---|
+| 측정 시간 | 17.9s | 18.4s | — |
+| commits 횟수 | 1,880 | 2,643 | +40.6% |
+| **avg actualDuration** | **3.75ms** | **2.31ms** | **−38.4%** |
+| max actualDuration | 113.00ms | 98.90ms | −12.5% |
+
+#### 측정 2 (재검증)
+| 지표 | Compiler OFF | Compiler ON | 변화 |
+|---|---|---|---|
+| 측정 시간 | 17.7s | 16.0s | — |
+| commits 횟수 | 1,936 | 2,100 | +8.5% |
+| **avg actualDuration** | **3.77ms** | **2.62ms** | **−30.5%** |
+| max actualDuration | 120.00ms | 106.30ms | −11.4% |
+
+#### 평균 (두 측정 합산)
+| 지표 | Compiler OFF | Compiler ON | 변화 |
+|---|---|---|---|
+| avg actualDuration | 3.76ms | 2.47ms | **−34.4%** |
+| max actualDuration | 116.5ms | 102.6ms | −11.9% |
+
+### 회고
+
+- 두 번 독립 측정에서 모두 30%+ avg 단축이 일관되게 나와 **재현성 확보**.
+- commits 횟수가 늘어난 점이 흥미로운 발견 — Compiler가 자식 메모이제이션을 자동화하면서
+  React가 commit을 더 잘게 쪼개 처리한 결과로 해석. 각 commit이 가벼워졌고 누적 시간은 13% 감소.
+- 측정 인프라 자체에서 무한 루프 버그가 한 번 발생했지만, "측정 도구가 측정 대상에 영향을 주지 않게"
+  ref 패턴으로 전환한 경험이 발표 시 부수적 어필 포인트.
+
+### 최종 반영 여부
+
+- 3개 커밋(Compiler 활성화 + 측정 카드/Profiler 인프라 + 무한 루프 fix)으로
+  `chore/react-compiler` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 37개 통과, `yarn build` 무오류
+- 측정 카드 스크린샷(Compiler ON/OFF)은 PR 본문에 별도 첨부
+- 이슈 #25와 연결 (Closes #25)
