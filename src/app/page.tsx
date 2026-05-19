@@ -1,10 +1,10 @@
-import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionDetailTablePlaceholder";
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LifecycleDonutChart } from "@/components/dashboard/LifecycleDonutChart";
 import { MonthlyPcfBarChart } from "@/components/dashboard/MonthlyPcfBarChart";
+import { MonthlyStageStackedBarChart } from "@/components/dashboard/MonthlyStageStackedBarChart";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
 import {
@@ -100,11 +100,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="col-span-12">
-            <ChartPlaceholder
-              title="월별 단계 적층 Bar Chart"
-              description="원소재 / 전기 / 운송 누적"
-              height="h-80"
-            />
+            <MonthlyStageStackedBarChart monthly={monthly} />
           </div>
 
           <div className="col-span-12">
