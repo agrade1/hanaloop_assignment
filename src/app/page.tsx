@@ -1,4 +1,4 @@
-import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionDetailTablePlaceholder";
+import { EmissionDetailTable } from "@/components/dashboard/EmissionDetailTable";
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="col-span-12 lg:col-span-8">
-            <EmissionDetailTablePlaceholder />
+            <EmissionDetailTable rows={calculated} />
           </div>
           <div className="col-span-12 lg:col-span-4">
             <ReductionScenarioPanel />
