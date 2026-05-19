@@ -3,6 +3,7 @@ import { EmissionDetailTablePlaceholder } from "@/components/dashboard/EmissionD
 import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { HeaderBar } from "@/components/dashboard/HeaderBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { MonthlyPcfBarChart } from "@/components/dashboard/MonthlyPcfBarChart";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import { StageDrillDownPlaceholder } from "@/components/dashboard/StageDrillDownPlaceholder";
 import {
@@ -91,10 +92,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="col-span-12 lg:col-span-8">
-            <ChartPlaceholder
-              title="월별 PCF Bar Chart"
-              description="월별 총 배출량 추이"
-            />
+            <MonthlyPcfBarChart monthly={monthly} />
           </div>
           <div className="col-span-12 lg:col-span-4">
             <ChartPlaceholder
