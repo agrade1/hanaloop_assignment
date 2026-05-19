@@ -22,6 +22,52 @@ const COLUMNS = {
   unit: "단위",
 } as const;
 
+/** 허용되는 활동 유형(생애주기 단계). */
+const VALID_TYPES: readonly LifecycleStage[] = ["원소재", "전기", "운송"];
+
+/** 허용되는 활동 단위. */
+const VALID_UNITS: readonly ActivityUnit[] = ["kWh", "kg", "ton-km"];
+
+/**
+ * 행 1개의 값을 검증해 에러 메시지 배열을 반환.
+ * 에러가 없으면 빈 배열.
+ */
+function validateRow(row: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+
+  if (!row[COLUMNS.date]) {
+    errors.push("일자가 비어 있습니다.");
+  }
+
+  const type = row[COLUMNS.type];
+  if (!VALID_TYPES.includes(type as LifecycleStage)) {
+    errors.push(
+      `활동 유형이 올바르지 않습니다: "${type}" (허용: ${VALID_TYPES.join(", ")})`,
+    );
+  }
+
+  if (!row[COLUMNS.description]) {
+    errors.push("설명이 비어 있습니다.");
+  }
+
+  const amountRaw = row[COLUMNS.amount];
+  const amount = Number(amountRaw);
+  if (!Number.isFinite(amount)) {
+    errors.push(`활동량이 숫자가 아닙니다: "${amountRaw}"`);
+  } else if (amount < 0) {
+    errors.push(`활동량이 음수입니다: ${amount}`);
+  }
+
+  const unit = row[COLUMNS.unit];
+  if (!VALID_UNITS.includes(unit as ActivityUnit)) {
+    errors.push(
+      `단위가 올바르지 않습니다: "${unit}" (허용: ${VALID_UNITS.join(", ")})`,
+    );
+  }
+
+  return errors;
+}
+
 /**
  * 엑셀 파일(ArrayBuffer)을 받아 첫 시트의 행을 JSON 객체 배열로 반환.
  * 헤더 행은 자동으로 키로 인식된다.
@@ -90,6 +136,15 @@ export function parseActivities(
       ok: false,
       errors: [`필수 컬럼이 누락되었습니다: ${missing.join(", ")}`],
     };
+  }
+
+  // 각 행의 값 검증 — 모든 행을 돌면서 에러를 모은다 (한 번에 다 보고 고치게)
+  const errors: string[] = [];
+  for (const row of rows) {
+    errors.push(...validateRow(row));
+  }
+  if (errors.length > 0) {
+    return { ok: false, errors };
   }
 
   return { ok: true, activities: rows.map((row) => mapRow(row, productId)) };
