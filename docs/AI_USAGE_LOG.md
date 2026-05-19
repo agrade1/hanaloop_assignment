@@ -407,3 +407,49 @@ Claude Code (Claude Opus 4.7) — VSCode 확장 환경
   `feat/emission-detail-table` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
 - `yarn test` 29개 통과, `yarn build` 무오류
 - 이슈 #17과 연결 (Closes #17)
+
+---
+
+## 2026-05-19 - 시나리오 슬라이더 인터랙션 연결
+
+### 사용 도구
+
+Claude Code (Claude Opus 4.7) — VSCode 확장 환경
+
+### 사용 목적
+
+평가 가이드 경영자 뷰의 핵심 — "감축 시나리오에 따른 예상 절감 효과" — 를
+인터랙티브로 완성한다. 단순 수치 표시가 아니라 슬라이더 움직임이 대시보드 전체
+(KPI · 차트 · 테이블)에 즉시 반영되도록 설계해, 발표 시 강한 어필 포인트로 활용.
+
+### Prompt
+
+- "감축 시나리오에 따른 절감 효과를 바로 보여줄 수 있게, 슬라이더 변경을 통한 절감률을 즉시 데이터에 반영하여 대시보드 전체를 변경시킬 수 있게 가자. props로 절감률을 일괄 전달하고, 슬라이더로 인한 단위 변환은 패널 내부에서 일괄 처리하는 흐름으로 적용." — 설계 방향 지시
+
+### AI 활용 영역
+
+- 지시한 설계(부모 state → props 단방향 흐름)에 맞춰 `DashboardClient` 구현 보조
+- ReductionScenarioPanel을 controlled 컴포넌트로 전환하는 코드 자동화
+- 슬라이더 UI(0~100%) ↔ 도메인 타입(0~1 비율) 변환 일관 적용
+- Before/After 카드와 절감 효과 표시의 UI 마무리
+
+### 직접 결정·검토한 부분
+
+- **데이터 흐름 설계** — 슬라이더 → 부모 state → props로 일괄 전달 → 모든 시각화 즉시 반영
+- **단위 변환 책임 분리** — 슬라이더는 0~100 표시, 도메인 타입은 0~1 비율. 변환은 ReductionScenarioPanel 안에서만 수행하도록 지시
+- **모든 시각화가 After 기준** — Before 단독 표시 대신 슬라이더 인터랙션이 대시보드 전체에 반영되어 발표 임팩트 강화
+- **서버 / 클라이언트 경계** — 데이터 페치는 서버, 인터랙션은 클라이언트 컨테이너로 분리해 SSG 친화성 유지
+- **HeaderBar 위치** — DashboardClient 안에 넣지 않고 page.tsx에 그대로 (ExcelUploadButton이 자체 클라이언트 컴포넌트라 무관)
+- **절감 효과 카드 빈 상태** — savings가 0이면 "슬라이더를 조정해보세요" 안내 메시지로 UX 명확화
+
+### 회고
+
+- 이전 PR들에서 추상화 계층(DataSource · calc · units)을 잘 분리해둔 덕분에 이번 인터랙션 연결이 단일 PR 250줄 정도로 마무리됨.
+- 슬라이더 → 차트·KPI 즉시 반영은 발표 데모에서 가장 인상적인 부분으로 자리잡을 것으로 기대.
+
+### 최종 반영 여부
+
+- 단일 커밋(DashboardClient 신설 + page.tsx 슬림화 + ReductionScenarioPanel controlled 전환)으로
+  `feat/scenario-interaction` 브랜치에 구성되어 `develop` 대상 PR로 제출됨
+- `yarn test` 29개 통과, `yarn build` 무오류
+- 이슈 #19와 연결 (Closes #19)
