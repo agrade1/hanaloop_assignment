@@ -59,16 +59,16 @@ export function EmissionDetailTable({ rows }: Props) {
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-auto rounded-md border border-border">
-          <Table>
+          <Table className="w-full table-fixed">
             <TableHeader className="sticky top-0 bg-card">
               <TableRow>
-                <TableHead>일자</TableHead>
-                <TableHead>단계</TableHead>
-                <TableHead>세부</TableHead>
-                <TableHead className="text-right">활동량</TableHead>
-                <TableHead className="text-right">배출계수</TableHead>
-                <TableHead className="text-right">배출량</TableHead>
-                <TableHead className="text-center">Scope</TableHead>
+                <TableHead className="w-[14%] text-center">일자</TableHead>
+                <TableHead className="w-[10%] text-center">단계</TableHead>
+                <TableHead className="w-[16%] text-center">세부</TableHead>
+                <TableHead className="w-[16%] text-center">활동량</TableHead>
+                <TableHead className="w-[14%] text-center">배출계수</TableHead>
+                <TableHead className="w-[18%] text-center">배출량</TableHead>
+                <TableHead className="w-[12%] text-center">Scope</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -78,7 +78,7 @@ export function EmissionDetailTable({ rows }: Props) {
                     {row.date}
                   </TableCell>
                   <TableCell className="font-medium">{row.type}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="truncate text-muted-foreground">
                     {row.description}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
