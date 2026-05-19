@@ -112,6 +112,18 @@ data/
 
 자세한 도메인 개념(PCF · 활동량 × 배출계수 · GHG Scope 1/2/3 · 배출계수 버전 관리)은 별도 학습 자료 참조.
 
+### 도메인 모델 (ERD)
+
+본 MVP는 정적 JSON 기반이지만, 향후 Postgres·외부 API 교체를 염두에 두고 도메인을 다음 관계로 모델링.
+
+![Domain ERD](docs/images/ERD.png)
+
+**매칭 규칙** (`ActivityRecord` ↔ `EmissionFactor`):
+
+- `type` AND `description` 동일 매칭
+- `validFrom ≤ activity.date < (validTo ?? ∞)` 시점 매칭
+- 여러 버전 매칭 시 가장 최신 `validFrom` 우선
+
 ---
 
 ## 성능 최적화
@@ -125,6 +137,12 @@ data/
 |---|---|---|---|
 | avg actualDuration | 3.76ms | 2.47ms | **−34.4%** |
 | max actualDuration | 116.5ms | 102.6ms | −11.9% |
+
+**측정 카드 스크린샷** (헤더 우측, dev 모드 전용):
+
+| Compiler OFF (Before) | Compiler ON (After) |
+|---|---|
+| ![Profiler OFF](docs/images/profiler-off.png) | ![Profiler ON](docs/images/profiler-on.png) |
 
 → 두 번 독립 측정에서 일관되게 30%+ avg 단축 확인. 자세한 측정 절차·해석은 [`docs/AI_USAGE_LOG.md`](docs/AI_USAGE_LOG.md) 참조.
 
