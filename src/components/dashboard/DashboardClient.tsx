@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  Profiler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ProfilerOnRenderCallback,
+} from "react";
 
 import { EmissionDetailTable } from "@/components/dashboard/EmissionDetailTable";
 import { FiltersBar, type Period } from "@/components/dashboard/FiltersBar";
@@ -9,6 +17,7 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LifecycleDonutChart } from "@/components/dashboard/LifecycleDonutChart";
 import { MonthlyPcfBarChart } from "@/components/dashboard/MonthlyPcfBarChart";
 import { MonthlyStageStackedBarChart } from "@/components/dashboard/MonthlyStageStackedBarChart";
+import { ProfilerMeasurementCard } from "@/components/dashboard/ProfilerMeasurementCard";
 import { ReductionScenarioPanel } from "@/components/dashboard/ReductionScenarioPanel";
 import {
   aggregateByMonth,
@@ -30,6 +39,16 @@ import { formatNumber, splitEmission } from "@/lib/units";
 
 const ALL_STAGES: LifecycleStage[] = ["원소재", "전기", "운송"];
 const SCENARIO_DEBOUNCE_MS = 500;
+
+/** dev 모드에서만 Profiler 측정 카드를 헤더에 노출 */
+const IS_DEV = process.env.NODE_ENV !== "production";
+
+type ProfilerCommit = {
+  /** React Profiler의 actualDuration (ms) */
+  duration: number;
+  /** 측정 시작 기준 경과 시간 (ms) */
+  at: number;
+};
 
 type Props = {
   /**
@@ -108,6 +127,52 @@ export function DashboardClient({ initialActivities, factors }: Props) {
     setActivities(uploaded);
   };
 
+  // ── Profiler 측정 인프라 (dev 모드 전용) ────────────────────────────────
+  // React 19 Compiler 도입 전/후의 렌더 비용을 동일 시나리오로 비교하기 위한 상태.
+  // startedAtRef / isMeasuringRef를 통해 Profiler 콜백이 매 렌더마다 새로 만들어지지 않게
+  // useCallback + ref 패턴으로 안정화한다.
+  const [isMeasuring, setIsMeasuring] = useState(false);
+  const [profilerCommits, setProfilerCommits] = useState<ProfilerCommit[]>([]);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const startedAtRef = useRef<number | null>(null);
+  const isMeasuringRef = useRef(false);
+
+  useEffect(() => {
+    isMeasuringRef.current = isMeasuring;
+  }, [isMeasuring]);
+
+  const handleProfilerRender: ProfilerOnRenderCallback = useCallback(
+    (_id, _phase, actualDuration) => {
+      if (!isMeasuringRef.current || startedAtRef.current === null) return;
+      const at = performance.now() - startedAtRef.current;
+      setProfilerCommits((prev) => [
+        ...prev,
+        { duration: actualDuration, at },
+      ]);
+    },
+    [],
+  );
+
+  const startMeasuring = () => {
+    setProfilerCommits([]);
+    setElapsedMs(0);
+    startedAtRef.current = performance.now();
+    setIsMeasuring(true);
+  };
+
+  const stopMeasuring = () => {
+    if (startedAtRef.current !== null) {
+      setElapsedMs(performance.now() - startedAtRef.current);
+    }
+    setIsMeasuring(false);
+  };
+
+  const resetMeasurement = () => {
+    setProfilerCommits([]);
+    setElapsedMs(0);
+    startedAtRef.current = null;
+  };
+
   // 활동 데이터에서 사용 가능한 월 목록 도출 (오름차순)
   const availableMonths = useMemo(() => {
     const months = new Set(activities.map((a) => a.date.slice(0, 7)));
@@ -164,8 +229,23 @@ export function DashboardClient({ initialActivities, factors }: Props) {
   const peakDisplay = peak ? splitEmission(peak.emission) : null;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <HeaderBar onUpload={handleUploadActivities} />
+    <Profiler id="dashboard" onRender={handleProfilerRender}>
+      <div className="flex min-h-screen flex-col">
+        <HeaderBar
+          onUpload={handleUploadActivities}
+          rightSlot={
+            IS_DEV ? (
+              <ProfilerMeasurementCard
+                isMeasuring={isMeasuring}
+                commits={profilerCommits}
+                elapsedMs={elapsedMs}
+                onStart={startMeasuring}
+                onStop={stopMeasuring}
+                onReset={resetMeasurement}
+              />
+            ) : undefined
+          }
+        />
       <main className="flex-1 p-6">
         {!hasData ? (
           <EmptyState />
@@ -249,7 +329,8 @@ export function DashboardClient({ initialActivities, factors }: Props) {
           </div>
         )}
       </main>
-    </div>
+      </div>
+    </Profiler>
   );
 }
 
