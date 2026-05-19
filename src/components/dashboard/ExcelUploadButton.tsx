@@ -75,8 +75,18 @@ export function ExcelUploadButton({
       }
 
       setStatus("success");
-      setMessage(`${result.activities.length}건의 활동을 임포트했습니다.`);
+      setMessage(
+        `${result.activities.length}건의 활동을 임포트했습니다. 잠시 후 자동으로 닫힙니다...`,
+      );
       onUpload?.(result.activities);
+      // 성공 메시지를 잠깐 보여준 뒤 모달 자동 닫기 + 다음 업로드를 위해 상태 reset
+      setTimeout(() => {
+        setOpen(false);
+        setFile(null);
+        setStatus("idle");
+        setMessage("");
+        setErrors([]);
+      }, 2000);
     } catch (err) {
       setStatus("error");
       setMessage(
